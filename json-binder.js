@@ -40,9 +40,9 @@ define(["require","deep/deep"], function(require, deep){
 
 		JsonEditorController.prototype = {
 			templates:{
-				inputText:"swig::/js/deep-ui/templates/json-editor/input-text.html",
-				node:"swig::/js/deep-ui/templates/json-editor/node.html",
-				item:"swig::/js/deep-ui/templates/json-editor/item.html"
+				inputText:"swig::/libs/deep-data-bind/json-editor/input-text.html",
+				node:"swig::/libs/deep-data-bind/json-editor/node.html",
+				item:"swig::/libs/deep-data-bind/json-editor/item.html"
 			},
 			editKeyAcess:true,
 			editValueInPlace:function(selector, prop){
@@ -147,7 +147,7 @@ define(["require","deep/deep"], function(require, deep){
 			var editor = new JsonEditorController();
 			alls.push(deep(templates || editor.templates)
 			.query(".//*?_schema.type=string")
-			.load());
+			.load(null, true));
 			alls.push(deep.when(deep.get(json)));
 			if(schema)
 				alls.push(deep.when(deep.get(schema)));
@@ -170,7 +170,7 @@ define(["require","deep/deep"], function(require, deep){
 		{
 			var output = {};
 			var stack =  [output];
-			//console.log("fromEditable html : try: ", selector + " *[property-type]");
+			console.log("fromEditable html : try: ", selector + " *[property-type]");
 			$(selector).find(" *[property-type]").each(function()
 			{
 				//console.log("fromEditable html : each proprty : ", this);
@@ -183,7 +183,7 @@ define(["require","deep/deep"], function(require, deep){
 				var value = null;
 				switch(propType)
 				{
-					case "array": 
+					case "array":
 						value = [];
 						break;
 					case "object":
@@ -202,7 +202,7 @@ define(["require","deep/deep"], function(require, deep){
 			});
 			//console.log("created output : ", output);
 			//$(this.domSelectors.output).html(JSON.stringify(output,null , ' '));
-			return deep(output);
+			return output;
 		};
 		return JsonEditorController;
 });
