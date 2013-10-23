@@ -1,4 +1,4 @@
-<div style="margin-bottom:7px;margin-top:7px;" property-depth="{{ depth }}" property-type="{{ type }}" >
+<div style="margin-bottom:7px;margin-top:7px;" json-property="true" >
 	<span style="padding:7px;" class="label label-inverse property-key">{{ key }}</span>
-	<span style="padding:7px;" class="label property-value">{{ value }}</span>
+	<span style="padding:7px;" class="label property-value">{% if value == "" %}&nbsp;{% else %}{{ value }}{% endif %}</span>
 </div>

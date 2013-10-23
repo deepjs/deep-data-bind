@@ -7,33 +7,37 @@ define(["require","deep/deep"], function(require, deep){
 		function editInPlaceBlur(clicked, prop)
 		{
 			var self = this;
-			(function(){
-				$(clicked)
-				.html(self.createInputHtml(prop))
-				.find(".property-input:first")
-				.blur(function (argument) {
-					//console.log("BLURR property value input : ", self)
-					var oldValue = prop.value;
-					prop.value = deep.Validator.convertStringTo($(this).val(), prop.type);
-					$(clicked).text(prop.value);
-					if(prop.value !== oldValue)
-						self.hasChange(oldValue, prop);
-				})
-				.focus()
-				.click(function (e) {
-					e.stopPropagation();
-				})
-				.keydown(function(event){
-					//console.log("keydown : code : ", event.keyCode);
-					if (event.keyCode == 27) 
-					{
+			$(clicked)
+			.html(self.createInputHtml(prop))
+			.find(".property-input:first")
+			.blur(function (argument) {
+				//console.log("BLURR property value input : ", self)
+				if(prop.change($(this).val()))
+				{
+					if(prop.value === "")
+						$(clicked).html("&nbsp;");
+					else
 						$(clicked).text(prop.value);
-						return;
-					}
-					if (event.keyCode == 13) 
-						$(this).blur();
-				});
-			})();
+					self.hasChange(prop);
+				}
+				else
+					$(this).focus();
+			})
+			.focus()
+			.click(function (e) {
+				e.stopPropagation();
+			})
+			.keydown(function(event){
+				//console.log("keydown : code : ", event.keyCode);
+				if (event.keyCode == 27)
+				{
+					$(clicked).text(prop.value);
+					prop.hideError();
+					return;
+				}
+				if (event.keyCode == 13)
+					$(this).blur();
+			});
 		}
 
 		var JsonEditorController = function(){};
@@ -44,11 +48,12 @@ define(["require","deep/deep"], function(require, deep){
 				node:"swig::/libs/deep-data-bind/json-editor/node.html",
 				item:"swig::/libs/deep-data-bind/json-editor/item.html"
 			},
-			editKeyAcess:true,
+			editKeyAccess:true,
 			editValueInPlace:function(selector, prop){
+				//console.log("edit value inplace : ", selector,  prop);
 				var othis = this;
 				$(selector).click(function (e) {
-					//console.log("Click on property value : ", $(this).text());
+					//console.log("Click on property value : ", this.propertyInfo);
 					e.preventDefault();
 					editInPlaceBlur.apply(othis, [this, prop]);
 				});
@@ -59,16 +64,18 @@ define(["require","deep/deep"], function(require, deep){
 					//console.log("Click on property value : ", $(this).text());
 					e.preventDefault();
 					var prop2 = {
+						schema:{ type:"string" },
 						path:prop.path,
 						key:prop.key,
-						value:prop.key,
-						type:deep.Validator.getType(prop.key)
-					}
+						value:prop.key
+					};
 					editInPlaceBlur.apply(othis, [this, prop2]);
 				});
 			},
 			createInputHtml : function(prop){
-				return this.templates.inputText(prop);
+				var r = this.templates.inputText(prop);
+				//console.log("input created : ",r);
+				return r;
 			},
 			createPropertyHtml : function(prop){
 				return this.templates.item(prop);
@@ -87,9 +94,9 @@ define(["require","deep/deep"], function(require, deep){
 				var othis = this;
 				//console.log("placeEntries : object =", object, " parentSelector = ", parentSelector);
 				var properties = [];
-				for (var i in object) 
+				for (var i in object)
 				{
-					if(!object.hasOwnProperty(i)) 
+					if(!object.hasOwnProperty(i))
 						continue;
 					properties.push({key:i,value:object[i]});
 				}
@@ -97,43 +104,95 @@ define(["require","deep/deep"], function(require, deep){
 				{
 					othis.currentPath.push(prop.key);
 					prop.path = othis.currentPath.join(".");
-					prop.type = deep.Validator.getType(prop.value);
-					prop.depth = othis.currentPath.length;
+	
+					if(prop.value instanceof Array)
+						prop.type = 'array';
+					else if(typeof prop.value === 'object')
+						prop.type = 'object';
+					else
+						prop.type = 'primitive';
+					prop.rootSchema = othis.schema;
+					if(othis.schema)
+						prop.schema = deep.utils.retrieveSchemaByPath(othis.schema, prop.path, ".");
+					//console.log("property schema : ", prop.schema);
+					var appended = null;
 					if(prop.path != "id")
 						switch(prop.type)
 						{
-							case 'array' :  
+							case 'array' :
 								// create node array
-								var appended = $(othis.createArrayNodeHtml(prop)).appendTo(parentSelector);
-								if(othis.editKeyAcess && (!parentProp || parentProp.type != 'array'))
+								appended = $(othis.createArrayNodeHtml(prop)).appendTo(parentSelector);
+								if(othis.editKeyAccess && (!parentProp || parentProp.type != 'array'))
 									othis.editKeyInPlace($(appended).find(".property-key:first"), prop);
 								othis.placeEntries(prop.value, $(appended).find(".property-childs:first"), prop);
 								break;
 							case 'object' :
 								// create node object
-								var appended = $(othis.createObjectNodeHtml(prop)).appendTo(parentSelector);
-								if(othis.editKeyAcess && (!parentProp || parentProp.type != 'array'))
+								appended = $(othis.createObjectNodeHtml(prop)).appendTo(parentSelector);
+								if(othis.editKeyAccess && (!parentProp || parentProp.type != 'array'))
 									othis.editKeyInPlace($(appended).find(".property-key:first"), prop);
 								othis.placeEntries(prop.value, $(appended).find(".property-childs:first"), prop);
 								break;
 							default :
 								// all other are editable datas
-								var appended = $(othis.createPropertyHtml(prop)).appendTo(parentSelector);
+								appended = $(othis.createPropertyHtml(prop)).appendTo(parentSelector);
 								othis.editValueInPlace($(appended).find(".property-value:first"), prop);
-								if(othis.editKeyAcess && (!parentProp || parentProp.type != 'array'))
+								if(othis.editKeyAccess && (!parentProp || parentProp.type != 'array'))
 									othis.editKeyInPlace($(appended).find(".property-key:first"), prop);
 						}
 					else
-						var appended = $(othis.createHiddenPropertyHtml(prop)).appendTo(parentSelector).css("display", "none");
+						appended = $(othis.createHiddenPropertyHtml(prop)).appendTo(parentSelector).css("display", "none");
 					othis.currentPath.pop();
+					prop.appended = appended;
+					prop.showError = function(errors){
+						//console.log("property .error : ", errors);
+						this.errors = errors;
+						var errorsString = "";
+						errors.forEach(function(e){
+							errorsString += e.detail;
+						});
+						if(!this.errorNode)
+							this.errorNode = $('<span class="property-error label label-important">'+errorsString+"</span>").appendTo(this.appended);
+						else
+							this.errorNode.text(errorsString);
+					};
+					prop.hideError = function(){
+						if(this.errorNode)
+						{
+							this.errorNode.remove();
+							delete this.errorNode;
+							delete this.errors;
+						}
+					};
+					prop.change = function(newValue)
+					{
+						if(this.schema)
+							newValue = deep.Validator.castAndCheck(newValue, this.schema, this.path);
+
+						if(newValue instanceof Error)
+						{
+							this.showError(newValue.report.errorsMap[this.path].errors);
+							return false;
+						}
+						else
+						{
+							this.value = newValue;
+							this.hideError();
+							return true;
+						}
+					};
+					appended.each(function(){
+						this.propertyInfo = prop;
+					});
+					
 				});
 			},
-			delegateHasChange:function(controller, oldValue, propertyInfo){
+			delegateHasChange:function(controller, propertyInfo){
 				console.log("DEFAULT DELEGATE NOT BINDED : json-editor.delegateHasChange : ", oldValue, " - ",propertyInfo);
 			},
-			hasChange:function(oldValue, propertyInfo){
+			hasChange:function(propertyInfo){
 				//this.createOutput();
-				this.delegateHasChange(this, oldValue, propertyInfo);
+				this.delegateHasChange(this, propertyInfo);
 			}
 		};
 
@@ -141,11 +200,15 @@ define(["require","deep/deep"], function(require, deep){
 
 		deep.ui.JSONBinder = JsonEditorController;
 
-		deep.ui.toJSONBind= function(json, selector, schema, templates, editKey)
+		deep.ui.toJSONBind= function(json, selector, schema, options)
 		{
+			options = options || {};
 			var alls = [];
 			var editor = new JsonEditorController();
-			alls.push(deep(templates || editor.templates)
+			if(options.delegate)
+				editor.delegateHasChange = options.delegate;
+			var templates = options.templates || editor.templates;
+			alls.push(deep(templates)
 			.query(".//*?_schema.type=string")
 			.load(null, true));
 			alls.push(deep.when(deep.get(json)));
@@ -160,7 +223,7 @@ define(["require","deep/deep"], function(require, deep){
 					editor.schema = loaded.shift();
 				if(templates)
 					editor.templates = templates;
-				editor.editKeyAccess = editKey;
+				editor.editKeyAccess = options.editKey;
 				$(selector).empty();
 				editor.placeEntries(editor.json, selector, null);
 				return editor;
@@ -170,41 +233,70 @@ define(["require","deep/deep"], function(require, deep){
 		{
 			var output = {};
 			var stack =  [output];
-			console.log("fromEditable html : try: ", selector + " *[property-type]");
-			$(selector).find(" *[property-type]").each(function()
+			var rootSchema = null;
+			var errors = [];
+			//console.log("fromEditable html : try: ", selector + " *[property-type]");
+			var allNodes = $(selector).find(" *[json-property]").each(function()
 			{
-				//console.log("fromEditable html : each proprty : ", this);
-				var propType = $(this).attr("property-type");
-				var depth = parseInt($(this).attr("property-depth"));
-				var key = $(this).find(".property-key:first").text();
-				while(stack.length > depth)
-					stack.pop();
-				var parent = stack[stack.length-1];
-				var value = null;
-				switch(propType)
-				{
-					case "array":
-						value = [];
-						break;
-					case "object":
-						value = {};
-						break;
-					default :
-						value = $(this).find(".property-value:first").text();
-						value = deep.Validator.convertStringTo(value, propType);
-				}
-				if(parent instanceof Array)
-					parent.push(value);
-				else
-					parent[key] = value;
-				if(propType == 'array' || propType == 'object')
-					stack.push(value);
+				var infos = this.propertyInfo;
+				if(infos.errorNode)
+					errors = errors.concat(infos.errors);
+				//console.log("fromEditable html : each proprty : ", infos);
+				deep.utils.setValueByPath(output, infos.path, infos.value, ".");
+				rootSchema = infos.rootSchema;
 			});
-			//console.log("created output : ", output);
-			//$(this.domSelectors.output).html(JSON.stringify(output,null , ' '));
-			return output;
+			if(errors.length > 0)
+				return deep.when(deep.errors.PreconditionFail("deep.ui.fromJSONBind output missformed.", { errors:errors, schema:schema }));
+			console.log("created output : ", output);
+			schema = rootSchema || schema;
+
+			if(schema)
+			{
+				var report = deep.validate(output, schema);
+				if(!report.valid)
+				{
+					allNodes.each(function()
+					{
+						var infos = this.propertyInfo;
+						console.log("fromJSONBind : error report : ",infos, report.errorsMap[infos.path]);
+						if(report.errorsMap[infos.path])
+							infos.showError(report.errorsMap[infos.path].errors)
+					});
+					return deep.when(deep.errors.PreconditionFail("deep.ui.fromJSONBind output missformed.", report));
+				}
+			}
+			return deep.when(output);
 		};
 		return JsonEditorController;
+
+
+		/**
+		 * todo : 
+		 *
+		 * on any rendered DOM node : 
+		 * we must have a function that permit to editInPlace it and to bind it to an uri (maybe _id_/my/path) with a schema
+		 * schema here is for partial validation in UI. entire validation is done in store
+		 *      	
+		 * 		    binder.bind(selector, schema, delegate)
+		 *
+		 * 		to edit entire json : 
+		 * 			hold descriptive node in DOM elements
+		 * 				schema, path etc
+		 * 				for partial validation in UI
+		 *
+		 *			hold casted/checked value in this node
+		 *
+		 * 			AND entire schema in root node
+		 * 				(full descriptive node)
+		 *
+		 *
+		 * 		allow to add anywhere in rendered dom : any new json edition DOM element
+		 *
+		 *
+		 * 		add in deep-schema : 
+		 * 			.convertAndCheck( input, schema )
+		 * 
+		 */
 });
 
 
