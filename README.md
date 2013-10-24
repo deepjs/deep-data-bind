@@ -2,7 +2,7 @@
 
 json oriented ui data binder for deepjs.
 
-## usage
+## Simple usage
 
 ```javascript
 
@@ -33,6 +33,8 @@ deep("js::deep-data-bind/json-binder")
 });
 
 ```
+
+## Example 2
 
 ```javascript
 
