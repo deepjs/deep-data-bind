@@ -12,16 +12,15 @@ define(["require","deep/deep"], function(require, deep){
 			.find(".property-input:first")
 			.blur(function (argument) {
 				//console.log("BLURR property value input : ", self)
-				if(prop.change($(this).val()))
-				{
-					if(prop.value === "")
-						$(clicked).html("&nbsp;");
-					else
-						$(clicked).text(prop.value);
-					self.hasChange(prop);
-				}
+				var change = prop.change($(this).val());
+				if(change instanceof Error)
+					return $(this).focus();
+				if(prop.value === "")
+					$(clicked).html("&nbsp;");
 				else
-					$(this).focus();
+					$(clicked).text(prop.value);
+				if(change === true)
+					self.hasChange(prop);
 			})
 			.focus()
 			.click(function (e) {
@@ -172,19 +171,20 @@ define(["require","deep/deep"], function(require, deep){
 						if(newValue instanceof Error)
 						{
 							this.showError(newValue.report.errorsMap[this.path].errors);
-							return false;
+							return newValue;
 						}
 						else
 						{
-							this.value = newValue;
 							this.hideError();
+							if(newValue === this.value)
+								return false;
+							this.value = newValue;
 							return true;
 						}
 					};
 					appended.each(function(){
 						this.propertyInfo = prop;
 					});
-					
 				});
 			},
 			delegateHasChange:function(controller, propertyInfo){
@@ -247,7 +247,7 @@ define(["require","deep/deep"], function(require, deep){
 			});
 			if(errors.length > 0)
 				return deep.when(deep.errors.PreconditionFail("deep.ui.fromJSONBind output missformed.", { errors:errors, schema:schema }));
-			console.log("created output : ", output);
+			//console.log("created output : ", output);
 			schema = rootSchema || schema;
 
 			if(schema)
