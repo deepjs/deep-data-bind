@@ -36,8 +36,10 @@ deep("js::deep-data-bind/json-binder")
 
 ## Todo
 
-* schema management on both 'to' and 'from' functions
-* store link pattern
-* debug editLKey : false
+* schema management on both 'to' and 'from' functions : done !
+* store link pattern : done !
+* debug editLKey : false : done !
+* add single dom element editable in place : editInPlace("selector to editable", "protocole::id/path/to/var", schema,  { delegate:function(){} } ) function
+* add single input binding : bindInput("input selector", "protoc::id/pathto/var", schema, { delegate:function(){} } ) function
 
 
