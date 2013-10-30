@@ -1,15 +1,12 @@
 {
   "name": "deep-data-bind",
   "description":"ui data binding for deepjs",
-  "author":{
-    "name": "Gilles Coomans",
-    "email": "gilles.coomans@gmail.com"
-  }, 
+  "author":"Gilles Coomans <gilles.coomans@gmail.com>", 
   "version": "0.1.0",
   "contributors": [],
   "repository": {
     "type": "git",
-    "url": "git://github.com/deepjs/deep-data-bind.git"
+    "url": "https://github.com/deepjs/deep-data-bind.git"
   },
   "maintainers": [
     {
@@ -18,13 +15,12 @@
     }
   ],
   "dependencies": {
-    "deep": ">=0.9.4"
+    "deepjs": ">=0.9.5"
   },
   "mappings":{
-    "deep": "https://github.com/deepjs/deepjs.git"
   },
   "engine":{
   	"node":">=0.10.0"
   },
-  "main":"main.js"
+  "main":"json-binder.js"
 }
