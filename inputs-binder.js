@@ -191,7 +191,7 @@ if (typeof define !== 'function') {
     var define = require('amdefine')(module);
 }
 define( function(require){
-	var deep = require("deep/deep");
+	var deep = require("deepjs/deep");
 
 	var InputsDataBinder =  function (){
 		//console.log("InputsDataBinder Constructor : ", this);

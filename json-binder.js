@@ -2,7 +2,7 @@ if(typeof define !== 'function'){
 	var define = require('amdefine')(module);
 }
 
-define(["require","deep/deep"], function(require, deep){
+define(["require","deepjs/deep"], function(require, deep){
 
 		function editInPlaceBlur(clicked, prop)
 		{
