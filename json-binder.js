@@ -188,7 +188,7 @@ define(["require","deepjs/deep"], function(require, deep){
 				});
 			},
 			delegateHasChange:function(controller, propertyInfo){
-				console.log("DEFAULT DELEGATE NOT BINDED : json-editor.delegateHasChange : ", oldValue, " - ",propertyInfo);
+				console.log("DEFAULT DELEGATE NOT BINDED : json-editor.delegateHasChange : ",propertyInfo);
 			},
 			hasChange:function(propertyInfo){
 				//this.createOutput();
