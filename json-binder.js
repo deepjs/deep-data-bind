@@ -97,7 +97,7 @@ define(["require","deepjs/deep"], function(require, deep){
 				{
 					if(!object.hasOwnProperty(i))
 						continue;
-					properties.push({key:i,value:object[i]});
+					properties.push({key:i,value:object[i] /* ,path:"", type:"array|object|pritmive", rootSchema, schema, appended, showError:Func, hideError:Func, change:Func */});
 				}
 				properties.forEach(function (prop)
 				{
@@ -260,12 +260,110 @@ define(["require","deepjs/deep"], function(require, deep){
 						var infos = this.propertyInfo;
 						console.log("fromJSONBind : error report : ",infos, report.errorsMap[infos.path]);
 						if(report.errorsMap[infos.path])
-							infos.showError(report.errorsMap[infos.path].errors)
+							infos.showError(report.errorsMap[infos.path].errors);
 					});
 					return deep.when(deep.errors.PreconditionFail("deep.ui.fromJSONBind output missformed.", report));
 				}
 			}
 			return deep.when(output);
+		};
+
+		deep.ui.bind = function(selector, path, rootSchema, callBack)
+		{
+			var request = deep.parseRequest(path);
+			var splitted = request.uri.split("/");
+
+			var prop = {
+				request:request,
+				objectID:splitted.shift(),
+				key:splitted[splitted.length-1],
+				value:$(selector).html(),
+				path:splitted.join("/"),
+				type:null,
+				rootSchema:rootSchema,
+				schema:{},
+				appended:null
+			};
+			if(prop.value instanceof Array)
+				prop.type = 'array';
+			else if(typeof prop.value === 'object')
+				prop.type = 'object';
+			else
+				prop.type = 'primitive';
+			if(rootSchema)
+				prop.schema = deep.utils.retrieveSchemaByPath(rootSchema, prop.path, "/");
+
+
+			prop.showError = function(errors){
+				//console.log("property .error : ", errors);
+				this.errors = errors;
+				var errorsString = "";
+				errors.forEach(function(e){
+					errorsString += e.detail;
+				});
+				if(!this.errorNode)
+					this.errorNode = $('<span class="property-error label label-important">'+errorsString+"</span>").appendTo(this.appended);
+				else
+					this.errorNode.text(errorsString);
+			};
+			prop.hideError = function(){
+				if(this.errorNode)
+				{
+					this.errorNode.remove();
+					delete this.errorNode;
+					delete this.errors;
+				}
+			};
+			prop.change = function(newValue)
+			{
+				if(this.schema)
+					newValue = deep.Validator.castAndCheck(newValue, this.schema, this.path);
+
+				if(newValue instanceof Error)
+				{
+					this.showError(newValue.report.errorsMap[this.path].errors);
+					return newValue;
+				}
+				else
+				{
+					this.hideError();
+					if(newValue === this.value)
+						return false;
+					this.value = newValue;
+					return true;
+				}
+			};
+			$(selector).each(function(){
+				prop.appended = this;
+				this.propertyInfo = prop;
+			});
+
+			var minieditor = {
+				templates:{
+					inputText:"swig::/libs/deep-data-bind/json-editor/input-text.html"
+				},
+				createInputHtml : function(prop){
+					var r = this.templates.inputText(prop);
+					console.log("input created : ",r);
+					return r;
+				},
+				hasChange:callBack
+			};
+
+			deep(minieditor).query("./templates").deepLoad(null, true);
+
+			$(selector)
+			.click(function(e){
+				e.preventDefault();
+				editInPlaceBlur.apply(minieditor, [this, prop]);
+			});
+		};
+		deep.ui.bindInput = function(selector, path, schema)
+		{
+			$(selector)
+			.blur(function(e){
+				e.preventDefault();
+			});
 		};
 		return JsonEditorController;
 
