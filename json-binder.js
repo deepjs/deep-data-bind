@@ -268,11 +268,13 @@ define(["require","deepjs/deep"], function(require, deep){
 			return deep.when(output);
 		};
 
-		deep.ui.bind = function(selector, path, rootSchema, callBack)
+		deep.ui.bind = function(selector, path, rootSchema, directPatch, callBack)
 		{
 			var request = deep.parseRequest(path);
 			var splitted = request.uri.split("/");
 
+			if(typeof directPatch === 'undefined')
+				directPatch = true;
 			var prop = {
 				request:request,
 				objectID:splitted.shift(),
@@ -344,10 +346,23 @@ define(["require","deepjs/deep"], function(require, deep){
 				},
 				createInputHtml : function(prop){
 					var r = this.templates.inputText(prop);
-					console.log("input created : ",r);
+					//console.log("input created : ",r);
 					return r;
 				},
-				hasChange:callBack
+				hasChange:function(prop){
+					if(directPatch)
+					{
+						var obj = { id:prop.objectID };
+						deep.utils.setValueByPath(obj, prop.path, prop.value, "/");
+						deep.store(prop.request.protocole).patch(obj)
+						.done(function(success){
+							if(callBack)
+								callBack(prop);
+						});
+					}
+					else if(callBack)
+						callBack(prop);
+				}
 			};
 
 			deep(minieditor).query("./templates").deepLoad(null, true);
