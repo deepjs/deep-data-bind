@@ -7,11 +7,12 @@ define(["require","deepjs/deep"], function(require, deep){
 		function editInPlaceBlur(clicked, prop)
 		{
 			var self = this;
-			$(clicked)
-			.html(self.createInputHtml(prop))
-			.find(".property-input:first")
+			$(clicked).empty();
+			var input = prop.input = $(self.createInputHtml(prop)).appendTo(clicked);
+
+			$(clicked).find(".property-input:first")
 			.blur(function (argument) {
-				//console.log("BLURR property value input : ", self)
+				//console.log("BLURR property value input : ", self);
 				var change = prop.change($(this).val());
 				if(change instanceof Error)
 					return $(this).focus();
@@ -19,17 +20,22 @@ define(["require","deepjs/deep"], function(require, deep){
 					$(clicked).html("&nbsp;");
 				else
 					$(clicked).text(prop.value);
+				prop.input = null;
 				if(change === true)
+				{
 					self.hasChange(prop);
+				}
 			})
 			.focus()
-			.click(function (e) {
+			.mousedown(function (e) {
 				e.stopPropagation();
+				//console.log("input clicked")
 			})
 			.keydown(function(event){
 				//console.log("keydown : code : ", event.keyCode);
 				if (event.keyCode == 27)
 				{
+					prop.input = null;
 					$(clicked).text(prop.value);
 					prop.hideError();
 					return;
@@ -51,15 +57,18 @@ define(["require","deepjs/deep"], function(require, deep){
 			editValueInPlace:function(selector, prop){
 				//console.log("edit value inplace : ", selector,  prop);
 				var othis = this;
-				$(selector).click(function (e) {
+				$(selector).mousedown(function (e) {
 					//console.log("Click on property value : ", this.propertyInfo);
 					e.preventDefault();
-					editInPlaceBlur.apply(othis, [this, prop]);
+					if(!prop.input)
+						editInPlaceBlur.apply(minieditor, [this, prop]);
+					else
+						$(this).find(".property-input:first").blur();
 				});
 			},
 			editKeyInPlace:function(selector, prop){
 				var othis = this;
-				$(selector).click(function (e) {
+				$(selector).mousedown(function (e) {
 					//console.log("Click on property value : ", $(this).text());
 					e.preventDefault();
 					var prop2 = {
@@ -368,9 +377,14 @@ define(["require","deepjs/deep"], function(require, deep){
 			deep(minieditor).query("./templates").deepLoad(null, true);
 
 			$(selector)
-			.click(function(e){
+			.mousedown(function(e){
+				e.stopPropagation();
 				e.preventDefault();
-				editInPlaceBlur.apply(minieditor, [this, prop]);
+				//console.log("prop.input : ", prop.input);
+				if(!prop.input)
+					editInPlaceBlur.apply(minieditor, [this, prop]);
+				else
+					$(this).find(".property-input:first").blur();
 			});
 		};
 		deep.ui.bindInput = function(selector, path, schema)
