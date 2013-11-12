@@ -359,18 +359,9 @@ define(["require","deepjs/deep"], function(require, deep){
 			return prop;
 		};
 
+		//_____________________________________________ SIMPLE BINDERS
+
 		deep.ui.binded = {};
-/*
-		deep.loopWhile = function()
-		{
-
-		};
-
-		deep.ui.binded.garbageCollect = function(){
-				// check is in odm : 
-				//jQuery.contains(document.documentElement, node[0])
-		};
-*/
 		(function( $ ) {
 		var oldClean = jQuery.cleanData;
 		$.cleanData = function( elems ) {
@@ -392,7 +383,6 @@ define(["require","deepjs/deep"], function(require, deep){
 				prop.value = newValue;
 				$(selector).html(newValue);
 			};
-
 			if(typeof options.directPatch === 'undefined')
 				options.directPatch = true;
 			var minieditor = {
@@ -471,7 +461,6 @@ define(["require","deepjs/deep"], function(require, deep){
 				prop.value = newValue;
 				$(selector).val(newValue);
 			};
-
 			return deep.getAll([prop.objectPath, prop.rootSchemaPath])
 			.done(function(success){
 				prop.value = deep.utils.retrieveValueByPath(success.shift(), prop.path, "/");
@@ -502,7 +491,6 @@ define(["require","deepjs/deep"], function(require, deep){
 						if(change === true)
 							hasChange(prop);
 					});
-
 				})
 				.keydown(function (event){
 					if (event.keyCode == 27)

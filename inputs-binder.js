@@ -174,7 +174,7 @@ deep.store("json::/campaign/", [...])
 deep.store("json::/campaign/")
 .range(...)
 .done(function (range) {
-	 // e.g. set pager
+	// e.g. set pager
 }) 
 .render(...)
 .bind(...)
@@ -215,8 +215,7 @@ define( function(require){
 		else
 			this.datas = {};
 		return this;
-	}
-
+	};
 
 	InputsDataBinder.prototype.replaceInDataPaths = function replaceInDataPaths(what, by)
 	{
@@ -234,8 +233,7 @@ define( function(require){
 			$(this).attr("data-path", path.replace(what, by));
 		});
 		return this;
-	} 
-
+	};
 
 	InputsDataBinder.prototype.toDatas = function toDatas()
 	{
@@ -253,7 +251,7 @@ define( function(require){
 				var field = this.pathMap[f].entries[i];
 				var val = null;
 				switch(field.type){
-					case "checkbox" : 
+					case "checkbox" :
 						if($(field.input).prop("checked"))
 							val = $(field.input).val();
 						break;
@@ -261,16 +259,16 @@ define( function(require){
 					case "button" : break;
 					case "submit" : break;
 
-					case "radio" : 
+					case "radio" :
 						if($(field.input).prop("checked"))
 							val = $(field.input).val();
 						break;
 					
 					case "select" :
-						val = new Array();
+						val = [];
 						$(field.input).find("option:selected").each(function(){
 							val.push($(this).val());
-						})
+						});
 						if(!$(field.input).prop("multiple") && val.length == 1)
 							val = val.shift();
 						break;
@@ -286,10 +284,8 @@ define( function(require){
 						} else
 							val = $(field.input).val();
 						break;
-					default : // text, hidden, textarea
-						null;
 				}
-				if(val == "null" || val == "undefined" || val == undefined)
+				if(val == "null" || val == "undefined" || typeof val === 'undefined')
 					val = null;
 
 				//console.log("INputsDataBinder.toDatas() : analyse field : ", field )
@@ -298,49 +294,47 @@ define( function(require){
 				if(this.pathMap[f].schema)
 				{
 					//console.log("DATA BINDER : to datas : ", f, " - ", this.pathMap[f].schema )
-					 if(val == null && this.pathMap[f].schema.type && this.pathMap[f].schema.type instanceof  Array && deep.utils.inArray("null", this.pathMap[f].schema.type || []))
-					 	;
-					 else
+					if(val === null && this.pathMap[f].schema.type && this.pathMap[f].schema.type instanceof  Array && deep.utils.inArray("null", this.pathMap[f].schema.type || []))
+					;
+					else
 						switch(this.pathMap[f].schema.type)
 						{
-							case "array" : 
-								if(field.lastNodeRef[field.lastPathPart] == null)
-									field.lastNodeRef[field.lastPathPart] = new Array();
+							case "array" :
+								if(field.lastNodeRef[field.lastPathPart] === null)
+									field.lastNodeRef[field.lastPathPart] = [];
 								break;
-							case "number" : val = parseFloat(val); break;	
-							case "float" : val = parseFloat(val); break;	
-							case "integer" : val = parseInt(val); break;
+							case "number" : val = parseFloat(val, 10); break;
+							case "float" : val = parseFloat(val, 10); break;
+							case "integer" : val = parseInt(val, 10); break;
 							case "boolean" :
 								//console.log("VERIFY A BOOLEAN VALUE - value = ", val )
 								val = (val == 'true' || val == "1")?true:false;
-								break;	
-							default : ;
+								break;
 						}
 	
 				}
 
 				if(field.lastNodeRef[field.lastPathPart] && field.lastNodeRef[field.lastPathPart].push)
-				{	
-					if(val != null)
+				{
+					if(val !== null)
 					{
 						field.lastNodeRef[field.lastPathPart].push(val);
 						this.pathMap[f].entries[i].val = field.lastNodeRef[field.lastPathPart];
-					}	
+					}
 				}
-				else 
-				{	
-					if(val != null && (field.type != "radio" ||  !this.pathMap[f].radioValue))
+				else
+				{
+					if(val !== null && (field.type != "radio" ||  !this.pathMap[f].radioValue))
 					{
 						field.lastNodeRef[field.lastPathPart] = val;
 						this.pathMap[f].entries[i].val = field.lastNodeRef[field.lastPathPart];
 						if(field.type == 'radio')
 							this.pathMap[f].radioValue = val;
-					}		
-				
+					}
 					//if(val == "")
 					//	delete field.lastNodeRef[field.lastPathPart];
 				}
-			}	
+			}
 		}
 		//console.log("inputs-data-binder", "toDatas() give (before copy old datas): " , JSON.stringify(this.output), " - datas ? ",  JSON.stringify(this.datas))
 		//if(this.editMode)
@@ -350,7 +344,7 @@ define( function(require){
 			//console.log("inputs-data-binder", "toDatas() give : " + JSON.stringify(this.output))
 		return this.output;
 		//
-	}
+	};
 
 	InputsDataBinder.prototype.fillFields = function fillFields(datas)
 	{
@@ -381,7 +375,7 @@ define( function(require){
 				switch (field.type)
 				{
 					case "checkbox":
-						if(val == null)
+						if(val === null)
 							break;
 						if($(field.input).val() == val || (val instanceof Array && deep.utils.inArray($(field.input).val(),val)))			// ________________________  TODO : inArray !!!!!
 							$(field.input).prop("checked", true);
@@ -389,7 +383,7 @@ define( function(require){
 
 						break;
 					case "radio":
-						if(val == null)
+						if(val === null)
 							break;
 						if($(field.input).val() == val){
 							$(field.input).prop("checked", true);
@@ -398,7 +392,7 @@ define( function(require){
 						//code
 						break;
 					case "select":
-						if(val == null)
+						if(val === null)
 							break;
 						$(field.input).find(" option[value='"+val+"']").prop("selected", true);
 					//	console.log("fill fields : select case : select : value assigned : "+$(field.input).val() + " - for "+i);
@@ -406,7 +400,7 @@ define( function(require){
 						break;
 					
 					default:
-						if(val == null)
+						if(val === null)
 						{
 							$(field.input).val("");
 							break;
@@ -414,14 +408,14 @@ define( function(require){
 						$(field.input).val(val);
 					//	console.log("fill fields : default case : input text : value assigned : "+$(field.input).val() + " - for "+i);
 						break;
-				}	
+				}
 			}
 		}
 		return this;
-	}
+	};
 
 	InputsDataBinder.prototype.createPathMap = function createPathMap(){
-		var pathMap = this.pathMap = new Object();
+		var pathMap = this.pathMap = {};
 		var othis = this;
 		var obj = this.output = {};
 		$(this.parentSelector + " input[data-path]").each(function createInputPathMap(){
@@ -439,15 +433,15 @@ define( function(require){
 				if(typeof tmp[curPart] === "undefined")
 					tmp[curPart] = {};
 				tmp = tmp[curPart];
-			}	
+			}
 			var lastPart = parts.shift();
-			if(tmp[lastPart] == undefined)
-				tmp[lastPart] = null;	
+			if(typeof tmp[lastPart] === 'undefined')
+				tmp[lastPart] = null;
 			if(!pathMap[path])
 				pathMap[path] = {};
 			pathMap[path].schema = schem;
 			if(!pathMap[path].entries)
-				pathMap[path].entries = new Array();
+				pathMap[path].entries = [];
 			
 			pathMap[path].entries.push({input:this, schema:schem, type:$(this).attr("type"), val:null, lastPathPart:lastPart, lastNodeRef:tmp });
 		});
@@ -465,17 +459,17 @@ define( function(require){
 			{
 				var curPart = parts.shift();
 				if(typeof tmp[curPart] === "undefined")
-					tmp[curPart] = new Object();
+					tmp[curPart] = {};
 				tmp = tmp[curPart];
-			}	
+			}
 			var lastPart = parts.shift();
-			if(tmp[lastPart] == undefined)
+			if(tmp[lastPart] === undefined)
 				tmp[lastPart] = null;
 			if(!pathMap[path])
 				pathMap[path] = {};
 			pathMap[path].schema = schem;
 			if(!pathMap[path].entries)
-				pathMap[path].entries = new Array();
+				pathMap[path].entries = [];
 			pathMap[path].entries.push( {input:this, val:null,  schema:schem, type:"select", lastPathPart:lastPart, lastNodeRef:tmp });
 		});
 		$(this.parentSelector + " textarea[data-path]").each(function createTextAreaPathMap(){
@@ -489,20 +483,20 @@ define( function(require){
 			{
 				var curPart = parts.shift();
 				if(typeof tmp[curPart] === "undefined")
-					tmp[curPart] = new Object();
+					tmp[curPart] = {};
 				tmp = tmp[curPart];
-			}	
+			}
 			var lastPart = parts.shift();
 			if(!pathMap[path])
 				pathMap[path] = {};
 			pathMap[path].schema = schem;
 			if(!pathMap[path].entries)
-				pathMap[path].entries = new Array();
+				pathMap[path].entries = [];
 			pathMap[path].entries.push({input:this, val:null, type:"textarea",   schema:schem, lastPathPart:lastPart, lastNodeRef:tmp });
 		});
 		//console.log("end path map");
 		return this;
-	}
+	};
 
 	InputsDataBinder.prototype.clear = function()
 	{
@@ -514,7 +508,7 @@ define( function(require){
 				$(this).val("");
 			if(type == "checkbox" || type == "radio")
 				$(this).prop("checked", false);
-		})
+		});
 		$(this.parentSelector + " select").find("option:selected").prop("selected", false);
 		$(this.parentSelector + " select").find("option:first").prop("selected", true);
 		$(this.parentSelector + " textarea").val("");
@@ -522,7 +516,7 @@ define( function(require){
 		$(this.parentSelector + " textarea.error").removeClass("error");
 		$(this.parentSelector + " select.error").removeClass("error");
 		return this;
-	}
+	};
 
 	InputsDataBinder.prototype.partialValidation = function(fields)
 	{
@@ -543,14 +537,14 @@ define( function(require){
 			}
 		}
 		return report;
-	}
+	};
 
 	InputsDataBinder.prototype.validate = function()
 	{
 		this.toDatas();
 	//	console.log("VAlidate output : ", this.output, " - ",this.schema);
 		var othis = this;
-		var report = deep.validate(this.output, this.schema)
+		var report = deep.validate(this.output, this.schema);
 		if( !report.valid)
 		{
 			for(var i in report.errorsMap)
@@ -563,7 +557,7 @@ define( function(require){
 			}
 		}
 		return report;
-	}
+	};
 
 
 	//____________________  EXAMPLE OF ERROR MANAGEMENT 
