@@ -14,17 +14,19 @@ define(["require","deepjs/deep"], function(require, deep){
 			.blur(function (argument) {
 				//console.log("BLURR property value input : ", self);
 				var change = prop.change($(this).val());
-				if(change instanceof Error)
-					return $(this).focus();
-				if(prop.value === "")
-					$(clicked).html("&nbsp;");
-				else
-					$(clicked).text(prop.value);
-				prop.input = null;
-				if(change === true)
-				{
-					self.hasChange(prop);
-				}
+				var me = this;
+				deep.when(change)
+				.done(function(change){
+					if(change instanceof Error)
+						return $(me).focus();
+					if(prop.value === "")
+						$(clicked).html("&nbsp;");
+					else
+						$(clicked).text(prop.value);
+					prop.input = null;
+					if(change === true)
+						self.hasChange(prop);
+				});
 			})
 			.focus()
 			.mousedown(function (e) {
@@ -277,33 +279,30 @@ define(["require","deepjs/deep"], function(require, deep){
 			return deep.when(output);
 		};
 
-		deep.ui.bind = function(selector, path, rootSchema, directPatch, callBack)
-		{
+
+		deep.ui.createBindedProp = function(path){
 			var request = deep.parseRequest(path);
 			var splitted = request.uri.split("/");
-
-			if(typeof directPatch === 'undefined')
-				directPatch = true;
 			var prop = {
 				request:request,
 				objectID:splitted.shift(),
 				key:splitted[splitted.length-1],
-				value:$(selector).html(),
+				value:null,
 				path:splitted.join("/"),
 				type:null,
-				rootSchema:rootSchema,
+				rootSchema:null,
 				schema:{},
-				appended:null
+				appended:null,
+				basePath:path
 			};
+			prop.objectPath = request.protocole+"::"+prop.objectID;
+			prop.rootSchemaPath = request.protocole+"::schema";
 			if(prop.value instanceof Array)
 				prop.type = 'array';
 			else if(typeof prop.value === 'object')
 				prop.type = 'object';
 			else
 				prop.type = 'primitive';
-			if(rootSchema)
-				prop.schema = deep.utils.retrieveSchemaByPath(rootSchema, prop.path, "/");
-
 
 			prop.showError = function(errors){
 				//console.log("property .error : ", errors);
@@ -317,6 +316,7 @@ define(["require","deepjs/deep"], function(require, deep){
 				else
 					this.errorNode.text(errorsString);
 			};
+
 			prop.hideError = function(){
 				if(this.errorNode)
 				{
@@ -325,115 +325,208 @@ define(["require","deepjs/deep"], function(require, deep){
 					delete this.errors;
 				}
 			};
+
 			prop.change = function(newValue)
 			{
-				if(this.schema)
-					newValue = deep.Validator.castAndCheck(newValue, this.schema, this.path);
+				var self = this;
+				function checkSchema(){
+					if(self.schema)
+						newValue = deep.Validator.castAndCheck(newValue, self.schema, self.path);
 
-				if(newValue instanceof Error)
-				{
-					this.showError(newValue.report.errorsMap[this.path].errors);
-					return newValue;
+					if(newValue instanceof Error)
+					{
+						self.showError(newValue.report.errorsMap[self.path].errors);
+						return newValue;
+					}
+					else
+					{
+						self.hideError();
+						if(newValue === self.value)
+							return false;
+						self.value = newValue;
+						return true;
+					}
 				}
-				else
-				{
-					this.hideError();
-					if(newValue === this.value)
-						return false;
-					this.value = newValue;
-					return true;
-				}
+				return checkSchema();
 			};
-			$(selector).each(function(){
-				prop.appended = this;
-				this.propertyInfo = prop;
-			});
 
+			prop.save = function(){
+				var obj = { id:this.objectID };
+				deep.utils.setValueByPath(obj, this.path, this.value, "/");
+				return deep.store(this.request.protocole).patch(obj);
+			};
+
+			return prop;
+		};
+
+		deep.ui.binded = {};
+/*
+		deep.loopWhile = function()
+		{
+
+		};
+
+		deep.ui.binded.garbageCollect = function(){
+				// check is in odm : 
+				//jQuery.contains(document.documentElement, node[0])
+		};
+*/
+		(function( $ ) {
+		var oldClean = jQuery.cleanData;
+		$.cleanData = function( elems ) {
+			for ( var i = 0, elem;
+			(elem = elems[i]) !== undefined; i++ ) {
+				$(elem).triggerHandler("destroyed");
+				//$.event.remove( elem, 'destroyed' );
+			}
+			oldClean(elems);
+		};
+		})(jQuery);
+
+		deep.ui.bind = function(selector, path, options)
+		{
+			options = options || {};
+			var prop = deep.ui.createBindedProp(path);
+			prop.value = $(selector).html();
+			prop.update = function(newValue){
+				prop.value = newValue;
+				$(selector).html(newValue);
+			};
+
+			if(typeof options.directPatch === 'undefined')
+				options.directPatch = true;
 			var minieditor = {
-				templates:{
-					inputText:"swig::/libs/deep-data-bind/json-editor/input-text.html"
+				externals:{
+					template:"swig::/libs/deep-data-bind/json-editor/input-text.html",
+					datas:prop.objectPath,
+					schema:prop.rootSchemaPath
 				},
 				createInputHtml : function(prop){
-					var r = this.templates.inputText(prop);
-					//console.log("input created : ",r);
-					return r;
+					return this.externals.template(prop);
 				},
 				hasChange:function(prop){
-					if(directPatch)
-					{
-						var obj = { id:prop.objectID };
-						deep.utils.setValueByPath(obj, prop.path, prop.value, "/");
-						deep.store(prop.request.protocole).patch(obj)
+					if(options.directPatch)
+						return prop.save()
 						.done(function(success){
-							if(callBack)
-								callBack(prop);
+							deep.ui.bind.update(prop);
+							if(options.callback)
+								options.callback(prop);
 						});
-					}
-					else if(callBack)
-						callBack(prop);
+					deep.ui.bind.update(prop);
+					if(options.callback)
+						options.callback(prop);
 				}
 			};
-
-			deep(minieditor).query("./templates").deepLoad(null, true);
-
-			$(selector)
-			.mousedown(function(e){
-				e.stopPropagation();
-				e.preventDefault();
-				//console.log("prop.input : ", prop.input);
-				if(!prop.input)
-					editInPlaceBlur.apply(minieditor, [this, prop]);
-				else
-					$(this).find(".property-input:first").blur();
+			return deep(minieditor.externals)
+			.deepLoad(null, true)
+			.done(function(success){
+				prop.value = deep.utils.retrieveValueByPath(success.datas, prop.path, "/");
+				prop.rootSchema = success.schema || {};
+				prop.schema = deep.utils.retrieveSchemaByPath(prop.rootSchema, prop.path, "/");
+				deep.ui.binded[path] = deep.ui.binded[path] || [];
+				deep.ui.binded[path].push(prop);
+				$(selector)
+				.html(prop.value)
+				.each(function(){
+					prop.appended = this;
+					this.propertyInfo = prop;
+					prop.bindID = Date.now().valueOf();
+				})
+				.on("destroyed", function(){
+					deep.utils.remove(deep.ui.binded[path], './*?bindID='+prop.bindID);
+					if(deep.ui.binded[path].length === 0)
+						delete deep.ui.binded[path];
+				})
+				.mousedown(function(e){
+					e.stopPropagation();
+					e.preventDefault();
+					if(!prop.input)
+						editInPlaceBlur.apply(minieditor, [this, prop]);
+					else
+						$(this).find(".property-input:first").blur();
+				});
+				return prop.value;
 			});
 		};
-		deep.ui.bindInput = function(selector, path, schema)
+
+		deep.ui.bindInput = function(selector, path, options)
 		{
-			$(selector)
-			.blur(function(e){
-				e.preventDefault();
+			options = options || {};
+			var prop = deep.ui.createBindedProp(path);
+			if(typeof options.directPatch === 'undefined')
+				options.directPatch = true;
+			function hasChange(prop){
+				if(options.directPatch)
+					return prop.save()
+					.done(function(success){
+						deep.ui.bind.update(prop);
+						if(options.callback)
+							options.callback(prop);
+					});
+				deep.ui.bind.update(prop);
+				if(options.callback)
+					options.callback(prop);
+			}
+			prop.update = function(newValue){
+				prop.value = newValue;
+				$(selector).val(newValue);
+			};
+
+			return deep.getAll([prop.objectPath, prop.rootSchemaPath])
+			.done(function(success){
+				prop.value = deep.utils.retrieveValueByPath(success.shift(), prop.path, "/");
+				prop.rootSchema = success.shift() || {};
+				prop.schema = deep.utils.retrieveSchemaByPath(prop.rootSchema, prop.path, "/");
+				deep.ui.binded[path] = deep.ui.binded[path] || [];
+				deep.ui.binded[path].push(prop);
+				$(selector)
+				.val(prop.value)
+				.each(function(){
+					if(prop.schema && prop.schema.description)
+						$(this).attr("placeholder", prop.schema.description);
+					prop.appended = this;
+					this.propertyInfo = prop;
+					prop.bindID = Date.now().valueOf();
+				})
+				.on("destroyed", function(){
+					deep.utils.remove(deep.ui.binded[path], './*?bindID='+prop.bindID);
+					if(deep.ui.binded[path].length === 0)
+						delete deep.ui.binded[path];
+				})
+				.blur(function (event) {
+					var self = this;
+					deep.when(prop.change($(this).val()))
+					.done(function(change){
+						if(change instanceof Error)
+							return $(self).focus();
+						if(change === true)
+							hasChange(prop);
+					});
+
+				})
+				.keydown(function (event){
+					if (event.keyCode == 27)
+					{
+						$(input).val(prop.value).blur();
+						return;
+					}
+					if (event.keyCode == 13)
+						$(this).blur();
+				});
+				return prop.value;
 			});
+		};
+
+		deep.ui.bind.update = function(prop)
+		{
+			if(deep.ui.binded[prop.basePath])
+				deep.ui.binded[prop.basePath].forEach(function(p){
+					if(p.bindID != prop.bindID)
+						p.update(prop.value);
+				});
 		};
 		return JsonEditorController;
-
-
-		/**
-		 * todo : 
-		 *
-		 * on any rendered DOM node : 
-		 * we must have a function that permit to editInPlace it and to bind it to an uri (maybe _id_/my/path) with a schema
-		 * schema here is for partial validation in UI. entire validation is done in store
-		 *      	
-		 * 		    binder.bind(selector, schema, delegate)
-		 *
-		 * 		to edit entire json : 
-		 * 			hold descriptive node in DOM elements
-		 * 				schema, path etc
-		 * 				for partial validation in UI
-		 *
-		 *			hold casted/checked value in this node
-		 *
-		 * 			AND entire schema in root node
-		 * 				(full descriptive node)
-		 *
-		 *
-		 * 		allow to add anywhere in rendered dom : any new json edition DOM element
-		 *
-		 *
-		 * 		add in deep-schema : 
-		 * 			.convertAndCheck( input, schema )
-		 * 
-		 */
 });
-
-
-
-
-
-
-
-
-
 
 
 
