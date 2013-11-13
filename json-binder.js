@@ -279,6 +279,7 @@ define(["require","deepjs/deep"], function(require, deep){
 			return deep.when(output);
 		};
 
+		//_____________________________________________ SIMPLE BINDERS
 
 		deep.ui.createBindedProp = function(path){
 			var request = deep.parseRequest(path);
@@ -305,12 +306,13 @@ define(["require","deepjs/deep"], function(require, deep){
 				prop.type = 'primitive';
 
 			prop.showError = function(errors){
-				//console.log("property .error : ", errors);
+				console.log("property .error : ", errors);
 				this.errors = errors;
 				var errorsString = "";
-				errors.forEach(function(e){
-					errorsString += e.detail;
-				});
+				if(errors && errors.forEach)
+					errors.forEach(function(e){
+						errorsString += e.detail;
+					});
 				if(!this.errorNode)
 					this.errorNode = $('<span class="property-error label label-important">'+errorsString+"</span>").appendTo(this.appended);
 				else
@@ -326,28 +328,37 @@ define(["require","deepjs/deep"], function(require, deep){
 				}
 			};
 
+			prop.load = function(){
+				console.log("prop.load :  ", prop);
+				var self = this;
+				return deep.getAll([this.objectPath, this.rootSchemaPath])
+				.done(function(success){
+					self.value = deep.utils.retrieveValueByPath(success.shift(), self.path, "/");
+					self.rootSchema = success.shift() || {};
+					self.schema = deep.utils.retrieveSchemaByPath(self.rootSchema, self.path, "/");
+					return self;
+				});
+			};
+
 			prop.change = function(newValue)
 			{
 				var self = this;
-				function checkSchema(){
-					if(self.schema)
-						newValue = deep.Validator.castAndCheck(newValue, self.schema, self.path);
+				if(self.schema)
+					newValue = deep.Validator.castAndCheck(newValue, self.schema, self.path);
 
-					if(newValue instanceof Error)
-					{
-						self.showError(newValue.report.errorsMap[self.path].errors);
-						return newValue;
-					}
-					else
-					{
-						self.hideError();
-						if(newValue === self.value)
-							return false;
-						self.value = newValue;
-						return true;
-					}
+				if(newValue instanceof Error)
+				{
+					self.showError(newValue.report.errorsMap[self.path].errors);
+					return newValue;
 				}
-				return checkSchema();
+				else
+				{
+					self.hideError();
+					if(newValue === self.value)
+						return false;
+					self.value = newValue;
+					return true;
+				}
 			};
 
 			prop.save = function(){
@@ -358,8 +369,6 @@ define(["require","deepjs/deep"], function(require, deep){
 
 			return prop;
 		};
-
-		//_____________________________________________ SIMPLE BINDERS
 
 		deep.ui.binded = {};
 		(function( $ ) {
@@ -379,6 +388,7 @@ define(["require","deepjs/deep"], function(require, deep){
 			options = options || {};
 			var prop = deep.ui.createBindedProp(path);
 			prop.value = $(selector).html();
+			console.log("bind : ", prop);
 			prop.update = function(newValue){
 				prop.value = newValue;
 				$(selector).html(newValue);
@@ -386,13 +396,9 @@ define(["require","deepjs/deep"], function(require, deep){
 			if(typeof options.directPatch === 'undefined')
 				options.directPatch = true;
 			var minieditor = {
-				externals:{
-					template:"swig::/libs/deep-data-bind/json-editor/input-text.html",
-					datas:prop.objectPath,
-					schema:prop.rootSchemaPath
-				},
+				template:"swig::/libs/deep-data-bind/json-editor/input-text.html",
 				createInputHtml : function(prop){
-					return this.externals.template(prop);
+					return this.template(prop);
 				},
 				hasChange:function(prop){
 					if(options.directPatch)
@@ -407,12 +413,11 @@ define(["require","deepjs/deep"], function(require, deep){
 						options.callback(prop);
 				}
 			};
-			return deep(minieditor.externals)
-			.deepLoad(null, true)
+			//console.log("bind will load : ", minieditor.externals);
+			return deep.getAll([minieditor.template, prop.load()])
 			.done(function(success){
-				prop.value = deep.utils.retrieveValueByPath(success.datas, prop.path, "/");
-				prop.rootSchema = success.schema || {};
-				prop.schema = deep.utils.retrieveSchemaByPath(prop.rootSchema, prop.path, "/");
+				minieditor.template = success.shift();
+				//prop = success.shift();
 				deep.ui.binded[path] = deep.ui.binded[path] || [];
 				deep.ui.binded[path].push(prop);
 				$(selector)
@@ -443,6 +448,7 @@ define(["require","deepjs/deep"], function(require, deep){
 		{
 			options = options || {};
 			var prop = deep.ui.createBindedProp(path);
+			// console.log("bindInput : ", prop);
 			if(typeof options.directPatch === 'undefined')
 				options.directPatch = true;
 			function hasChange(prop){
@@ -461,11 +467,10 @@ define(["require","deepjs/deep"], function(require, deep){
 				prop.value = newValue;
 				$(selector).val(newValue);
 			};
-			return deep.getAll([prop.objectPath, prop.rootSchemaPath])
-			.done(function(success){
-				prop.value = deep.utils.retrieveValueByPath(success.shift(), prop.path, "/");
-				prop.rootSchema = success.shift() || {};
-				prop.schema = deep.utils.retrieveSchemaByPath(prop.rootSchema, prop.path, "/");
+			// console.log("prop will load");
+			return deep.when(prop.load())
+			.done(function(prop){
+				// console.log("prop loaded : ", prop);
 				deep.ui.binded[path] = deep.ui.binded[path] || [];
 				deep.ui.binded[path].push(prop);
 				$(selector)
@@ -512,6 +517,95 @@ define(["require","deepjs/deep"], function(require, deep){
 					if(p.bindID != prop.bindID)
 						p.update(prop.value);
 				});
+		};
+
+		deep.ui.bindForm = function(selector, options){
+			$(selector)
+			.find("*[data-bind]")
+			.each(function(e){
+				var path = $(e).attr("data-bind");
+				switch(e.tagName.toLowerCase())
+				{
+					case "input" :
+					case "textarea" :
+						deep.ui.bindInput(e, path, options);
+						break;
+					default :
+						deep.ui.bind(e, path, options);
+				}
+			});
+		};
+
+		deep.ui.fromBind = function(selector, saveType)
+		{
+			var objects = {}, errors = [], promises = [];
+			$(selector)
+			.find("*[data-bind]")
+			.each(function(e){
+
+				function checkErrors(prop){
+					if(prop.errors && prop.errors.length > 0)
+					{
+						errors = errors.concat(prop.errors);
+						return true;	// continue
+					}
+					var cur = objects[prop.objectPath] = objects[prop.objectPath] || {};
+					deep.utils.setValueByPath(cur, prop.path, prop.value, '/');
+				}
+
+				var prop = e.propertyInfo;
+				if(!prop)
+				{
+					var path = $(e).attr("data-bind");
+					prop = deep.ui.createBindedProp(path);
+					var d = deep.when(prop.load())
+					.done(function(){
+						var val = null;
+						switch(e.tagName.toLowerCase())
+						{
+							case "input" :
+							case "textarea" :
+								val = $(e).val();
+								break;
+							default :
+								val = $(e).html();
+						}
+						prop.change(val);
+						checkErrors(prop);
+					});
+					return promises.push(d);	// continue;
+				}
+				else checkErrors(prop);
+			});
+
+			function saveAll(){
+				if(errors.length > 0)
+					return deep.when(deep.errors.PreconditionFail("from bind failed : still errors.", errors));
+
+				if(!saveType)
+					return deep.when(objects);
+
+				// save all
+				var alls = [];
+				for(var i in objects)
+				{
+					var d = deep.store(prop.request.protocole)[saveType](objects[i], { id:prop.objectID });
+					alls.push(d);
+				}
+
+				return deep.all(alls)
+				.done(function(success){
+					if(success.length ==  1)
+						return success.shift();
+				});
+			}
+
+			if(promises.length > 0)
+				return deep.all(promises)
+				.done(function(success){
+					return saveAll();
+				});
+			return saveAll();
 		};
 		return JsonEditorController;
 });
