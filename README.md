@@ -168,15 +168,27 @@ deep("js::deep-data-bind/json-binder")
 
 ```
 
+## Simples binds
+
+```javascript
+
+    var bindOptions = {
+        callback:function(prop){
+            list.refresh();
+        },
+        directPatch:true
+    };
+
+    // bind tag selector to a field in mp3 datas. (binded to the property /meta/artist from object 527a03....)
+    // add in-place-edition capabilities to tag
+    deep.ui.bind("#list-title", "mp3::527a03e0c9f5cf073d4d3570/meta/artist", bindOptions);
+
+    // bind html input to a field in mp3 datas. (binded to the property /meta/year from object 527a03....)
+    deep.ui.bindInput("#test-input", "mp3::527a03e0c9f5cf073d4d3570/meta/year", bindOptions);
+    
+```
+
+
 See [deep-spa-sandbox](https://github.com/deepjs/deep-spa-sandbox) app controller for workable example.
-
-
-## Todo
-
-* schema management on both 'to' and 'from' functions : done !
-* store link pattern : done !
-* debug editLKey : false : done !
-* add single dom element editable in place : editInPlace("selector to editable", "protocole::id/path/to/var", schema,  { delegate:function(){} } ) function
-* add single input binding : bindInput("input selector", "protoc::id/pathto/var", schema, { delegate:function(){} } ) function
 
 
