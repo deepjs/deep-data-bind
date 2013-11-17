@@ -1,19 +1,20 @@
 {
   "name": "deep-data-bind",
   "description":"ui data binding for deepjs",
-  "author":"Gilles Coomans <gilles.coomans@gmail.com>", 
+  "author":"Gilles Coomans <gilles.coomans@gmail.com>",
+  "contributors": ["Philippe Delabye <phil@chemicalrules.net>"],
   "version": "0.3.1",
   "contributors": [],
+  "licenses": [
+    {
+         "type": "LGPLv3.0",
+         "url": "http://www.gnu.org/licenses/lgpl-3.0.txt"
+     }
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/deepjs/deep-data-bind.git"
   },
-  "maintainers": [
-    {
-      "name": "Philippe Delabye",
-      "email": "phil@chemicalrules.net"
-    }
-  ],
   "dependencies": {
     "deepjs": ">=0.9.6"
   },
