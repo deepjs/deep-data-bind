@@ -66,7 +66,7 @@ case : you have an already constructed form (or bunch of inputs) somewhere in DO
 			if(report.valid)
 				def.resolve(report.value);
 		});
-		return deep.promise(def);
+		return deep.when(def);
 	})
 	.post(...)
 
