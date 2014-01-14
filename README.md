@@ -62,7 +62,7 @@ deep("js::deep-data-bind/json-binder")
     };
     // creating stores and protocoles
     //deep.store.jqueryajax.JSON.createDefault();
-    deep.protocoles.swig.createDefault();
+    deep.protocols.swig.createDefault();
     deep.store.jstorage.Collection.create("myobjects", null, schema);
 
     var view = {
@@ -161,7 +161,7 @@ deep("js::deep-data-bind/json-binder")
     .prependTo("#content")
     .click(function(e){
         e.preventDefault();
-        deep.protocoles.myobjects.flush();
+        deep.protocols.myobjects.flush();
         view.refreshList();
     });
 

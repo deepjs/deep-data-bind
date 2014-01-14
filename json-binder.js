@@ -282,7 +282,7 @@ define(["require","deepjs/deep"], function(require, deep){
 		//_____________________________________________ SIMPLE BINDERS
 
 		deep.ui.createBindedProp = function(path){
-			var request = deep.parseRequest(path);
+			var request = deep.utils.parseRequest(path);
 			var splitted = request.uri.split("/");
 			var prop = {
 				request:request,
