@@ -3,7 +3,7 @@
   "description":"ui data binding for deepjs",
   "author":"Gilles Coomans <gilles.coomans@gmail.com>",
   "contributors": ["Philippe Delabye <phil@chemicalrules.net>"],
-  "version": "0.3.1",
+  "version": "0.3.2",
   "contributors": [],
   "licenses": [
     {
@@ -16,7 +16,7 @@
     "url": "https://github.com/deepjs/deep-data-bind.git"
   },
   "dependencies": {
-    "deepjs": ">=0.9.6"
+    "deepjs": ">=0.10.2"
   },
   "mappings":{
   },
