@@ -63,7 +63,7 @@ define(["require","deepjs/deep"], function(require, deep){
 					//console.log("Click on property value : ", this.propertyInfo);
 					e.preventDefault();
 					if(!prop.input)
-						editInPlaceBlur.apply(minieditor, [this, prop]);
+						editInPlaceBlur.apply(othis, [this, prop]);
 					else
 						$(this).find(".property-input:first").blur();
 				});
@@ -269,7 +269,7 @@ define(["require","deepjs/deep"], function(require, deep){
 					allNodes.each(function()
 					{
 						var infos = this.propertyInfo;
-						console.log("fromJSONBind : error report : ",infos, report.errorsMap[infos.path]);
+						//console.log("fromJSONBind : error report : ",infos, report.errorsMap[infos.path]);
 						if(report.errorsMap[infos.path])
 							infos.showError(report.errorsMap[infos.path].errors);
 					});
@@ -296,8 +296,8 @@ define(["require","deepjs/deep"], function(require, deep){
 				appended:null,
 				basePath:path
 			};
-			prop.objectPath = request.protocole+"::"+prop.objectID;
-			prop.rootSchemaPath = request.protocole+"::schema";
+			prop.objectPath = request.protocol+"::"+prop.objectID;
+			prop.rootSchemaPath = request.protocol+"::schema";
 			if(prop.value instanceof Array)
 				prop.type = 'array';
 			else if(typeof prop.value === 'object')
@@ -306,15 +306,24 @@ define(["require","deepjs/deep"], function(require, deep){
 				prop.type = 'primitive';
 
 			prop.showError = function(errors){
-				console.log("property .error : ", errors);
+				//console.log("property .error : ", errors);
 				this.errors = errors;
 				var errorsString = "";
 				if(errors && errors.forEach)
 					errors.forEach(function(e){
+						//console.log("property .error foreach : ", e);
 						errorsString += e.detail;
 					});
+				//console.log("this.errorNode : ", this.appended);
+
 				if(!this.errorNode)
-					this.errorNode = $('<span class="property-error label label-important">'+errorsString+"</span>").appendTo(this.appended);
+				{
+					var tagName = $(this.appended).get(0).tagName.toLowerCase();
+					if(tagName == "input" || tagName == "text-area" || tagName == "selection")
+						this.errorNode = $(this.appended).after('<span class="property-error label label-important">'+errorsString+"</span>").next();
+					else
+						this.errorNode = $('<span class="property-error label label-important">'+errorsString+"</span>").appendTo(this.appended);
+				}
 				else
 					this.errorNode.text(errorsString);
 			};
@@ -329,7 +338,7 @@ define(["require","deepjs/deep"], function(require, deep){
 			};
 
 			prop.load = function(){
-				console.log("prop.load :  ", prop);
+				//console.log("prop.load :  ", prop);
 				var self = this;
 				return deep.getAll([this.objectPath, this.rootSchemaPath])
 				.done(function(success){
@@ -364,7 +373,7 @@ define(["require","deepjs/deep"], function(require, deep){
 			prop.save = function(){
 				var obj = { id:this.objectID };
 				deep.utils.setValueByPath(obj, this.path, this.value, "/");
-				return deep.store(this.request.protocole).patch(obj);
+				return deep.store(this.request.protocol).patch(obj);
 			};
 
 			return prop;
@@ -388,7 +397,7 @@ define(["require","deepjs/deep"], function(require, deep){
 			options = options || {};
 			var prop = deep.ui.createBindedProp(path);
 			prop.value = $(selector).html();
-			console.log("bind : ", prop);
+			//console.log("bind : ", prop);
 			prop.update = function(newValue){
 				prop.value = newValue;
 				$(selector).html(newValue);
@@ -470,7 +479,7 @@ define(["require","deepjs/deep"], function(require, deep){
 			// console.log("prop will load");
 			return deep.when(prop.load())
 			.done(function(prop){
-				// console.log("prop loaded : ", prop);
+				 //console.log("INPUT binding prop loaded : ", prop);
 				deep.ui.binded[path] = deep.ui.binded[path] || [];
 				deep.ui.binded[path].push(prop);
 				$(selector)
@@ -589,7 +598,7 @@ define(["require","deepjs/deep"], function(require, deep){
 				var alls = [];
 				for(var i in objects)
 				{
-					var d = deep.store(prop.request.protocole)[saveType](objects[i], { id:prop.objectID });
+					var d = deep.store(prop.request.protocol)[saveType](objects[i], { id:prop.objectID });
 					alls.push(d);
 				}
 
