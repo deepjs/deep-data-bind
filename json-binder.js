@@ -616,6 +616,55 @@ define(["require","deepjs/deep"], function(require, deep){
 				});
 			return saveAll();
 		};
+
+		deep.utils.up({
+			propertyBind: function (descriptor) {
+				descriptor.placed
+				.find("div[property-bind]") // <div  data-bind="mp3::id/meta/artist" />
+				.each(function() {
+					//console.log("Binding property : ", $(this).attr("property-bind"));
+					// apply bind
+					// check if edit-on-click attr
+					// check any schema related attrs
+					deep.ui.bind(this, $(this).attr("property-bind"), {
+						directPatch: true,
+						callback: null
+					});
+				});
+			},
+			inputBind: function (descriptor) {
+				descriptor.placed
+				.find("input[input-bind]") // <div  data-bind="mp3::id/meta/artist" />
+				.each(function() {
+					//console.log("Binding input : ", $(this).attr("input-bind"));
+					// apply bind
+					// check if edit-on-click attr
+					// check any schema related attrs
+					deep.ui.bindInput(this, $(this).attr("input-bind"), {
+						directPatch: true,
+						callback: null
+					});
+				});
+			},
+			objectBind: function (descriptor) {
+				var schema ={};
+				descriptor.placed
+				.find("div[object-bind]") // <div  object-bind="mp3::id" schema:"jsion::",  maxLength="12"> 
+				.each(function() {
+					var self = this;
+					console.log("Binding object : ", $(this).attr("object-bind"));
+					var uri = $(this).attr("object-bind");
+					var request = deep.utils.parseRequest(uri);
+					var schemapath = request.protocol+"::schema";
+			
+					// apply bind
+					deep.getAll([uri,schemapath]).done(function (res) {
+						deep.ui.toJSONBind(res[0], self, res[1] || {});
+					});
+				});
+			}			
+		},deep.ui.View.htmlEnhancers);
+
 		return JsonEditorController;
 });
 
