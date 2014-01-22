@@ -77,11 +77,11 @@ case : you have an already constructed form (or bunch of inputs) somewhere in DO
 //_______________________________________
 
 
-protocole : app::
+protocol : app::
 
 si on a plusieurs app : on peut seter un truc genre :
 
-deep.request.protocole("app2", {
+deep.request.protocol("app2", {
 	parse:function (request) {
 		// body...
 	},
@@ -92,16 +92,16 @@ deep.request.protocole("app2", {
 
 ou
 
-deep.request.protocole.app("app2", monApp)
+deep.request.protocol.app("app2", monApp)
 
 //________________________________________________
 
 
 d'ailleurs : 
 deep(deep.request).up({
-	protocoles:{
+	protocols:{
 		json:{
-			parse:function (protocoleInfos, request) {
+			parse:function (protocolInfos, request) {
 				return deep.request.parser(request).uri(false).deeprql(false)
 			},
 			get:function (parsed) {
@@ -109,7 +109,7 @@ deep(deep.request).up({
 			}
 		},
 		"json.range":{
-			parse:function (protocoleInfos, request) {
+			parse:function (protocolInfos, request) {
 				return deep.request.parser(request).uri(false).deeprql(false)
 			},
 			get:function (parsed) {
@@ -119,8 +119,8 @@ deep(deep.request).up({
 	}
 })
 
-deep.request.protocole(["app2"], {
-	parse:function (protocoleInfos, request) {
+deep.request.protocol(["app2"], {
+	parse:function (protocolInfos, request) {
 		return deep.request.parser.rql(request)
 	},
 	get:function (parsed) {
@@ -128,8 +128,8 @@ deep.request.protocole(["app2"], {
 	}
 });
 
-deep.request.protocole(["app","rss"], {
-	parse:function (protocoleInfos, request) {
+deep.request.protocol(["app","rss"], {
+	parse:function (protocolInfos, request) {
 		return deep.request.parser.rql(request)
 	},
 	get:function (parsed) {

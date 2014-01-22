@@ -60,7 +60,7 @@ deep("js::deep-data-bind/json-binder")
             }
         }
     };
-    // creating stores and protocoles
+    // creating stores and protocols
     //deep.store.jqueryajax.JSON.createDefault();
     deep.protocols.swig.createDefault();
     deep.store.jstorage.Collection.create("myobjects", null, schema);
