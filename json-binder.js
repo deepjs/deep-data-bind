@@ -456,7 +456,23 @@ define(["require","deepjs/deep"], function(require, deep){
 		deep.ui.bindInput = function(selector, path, options)
 		{
 			options = options || {};
-			var prop = deep.ui.createBindedProp(path);
+			var descriptor = {
+				selector:selector,
+				path:path,
+				options:options,
+				error:null,
+				valid:function(){
+					if(!this.prop)
+						return false;
+					return (!this.prop.errors || this.prop.errors.length === 0);
+				},
+				value:function(){
+					if(!this.prop || !this.valid())
+						return null;
+					return this.prop.value;
+				}
+			};
+			var prop = descriptor.prop = deep.ui.createBindedProp(path);
 			// console.log("bindInput : ", prop);
 			if(typeof options.directPatch === 'undefined')
 				options.directPatch = true;
@@ -476,10 +492,11 @@ define(["require","deepjs/deep"], function(require, deep){
 				prop.value = newValue;
 				$(selector).val(newValue);
 			};
+
 			// console.log("prop will load");
-			return deep.when(prop.load())
+			descriptor.promise = deep.when(prop.load())
 			.done(function(prop){
-				 //console.log("INPUT binding prop loaded : ", prop);
+				//console.log("INPUT binding prop loaded : ", prop);
 				deep.ui.binded[path] = deep.ui.binded[path] || [];
 				deep.ui.binded[path].push(prop);
 				$(selector)
@@ -515,8 +532,12 @@ define(["require","deepjs/deep"], function(require, deep){
 					if (event.keyCode == 13)
 						$(this).blur();
 				});
-				return prop.value;
+			})
+			.fail(function(e){
+				descriptor.error = e;
+				return deep.errors.Error("error while binding : ", { error:e, descriptor:descriptor });
 			});
+			return descriptor;
 		};
 
 		deep.ui.bind.update = function(prop)
