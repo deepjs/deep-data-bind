@@ -283,7 +283,10 @@ define(["require","deepjs/deep"], function(require, deep){
 
 		deep.ui.createBindedProp = function(path){
 			var request = deep.utils.parseRequest(path);
+			//console.log("parsed request for prop : ", request);
 			var splitted = request.uri.split("/");
+			if(splitted[0] === "")
+				splitted.shift();
 			var prop = {
 				request:request,
 				objectID:splitted.shift(),
@@ -296,6 +299,7 @@ define(["require","deepjs/deep"], function(require, deep){
 				appended:null,
 				basePath:path
 			};
+			//console.log("will init prop : ", prop);
 			prop.objectPath = request.protocol+"::"+prop.objectID;
 			prop.rootSchemaPath = request.protocol+"::schema";
 			if(prop.value instanceof Array)
@@ -342,6 +346,7 @@ define(["require","deepjs/deep"], function(require, deep){
 				var self = this;
 				return deep.getAll([this.objectPath, this.rootSchemaPath])
 				.done(function(success){
+					console.log("property loaded : ",success, self.path, "/")
 					self.value = deep.utils.retrieveValueByPath(success.shift(), self.path, "/");
 					self.rootSchema = success.shift() || {};
 					self.schema = deep.utils.retrieveSchemaByPath(self.rootSchema, self.path, "/");
