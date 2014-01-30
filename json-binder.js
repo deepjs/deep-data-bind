@@ -220,7 +220,7 @@ define(["require","deepjs/deep"], function(require, deep){
 				editor.delegateHasChange = options.delegate;
 			var templates = options.templates || editor.templates;
 			alls.push(deep(templates)
-			.query(".//*?_schema.type=string")
+			.query(".//*?_type=string")
 			.load(null, true));
 			alls.push(deep.when(deep.get(json)));
 			if(schema)
