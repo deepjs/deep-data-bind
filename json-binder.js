@@ -162,7 +162,7 @@ define(["require","deepjs/deep"], function(require, deep){
 							errorsString += e.detail;
 						});
 						if(!this.errorNode)
-							this.errorNode = $('<span class="property-error label label-important">'+errorsString+"</span>").appendTo(this.appended);
+							this.errorNode = $('<div class="property-error label label-important">'+errorsString+"</div>").appendTo(this.appended);
 						else
 							this.errorNode.text(errorsString);
 					};
@@ -324,9 +324,9 @@ define(["require","deepjs/deep"], function(require, deep){
 				{
 					var tagName = $(this.appended).get(0).tagName.toLowerCase();
 					if(tagName == "input" || tagName == "text-area" || tagName == "selection")
-						this.errorNode = $(this.appended).after('<span class="property-error label label-important">'+errorsString+"</span>").next();
+						this.errorNode = $(this.appended).after('<div class="property-error label label-important">'+errorsString+"</div>").next();
 					else
-						this.errorNode = $('<span class="property-error label label-important">'+errorsString+"</span>").appendTo(this.appended);
+						this.errorNode = $('<div class="property-error label label-important">'+errorsString+"</div>").appendTo(this.appended);
 				}
 				else
 					this.errorNode.text(errorsString);
@@ -342,14 +342,17 @@ define(["require","deepjs/deep"], function(require, deep){
 			};
 
 			prop.load = function(){
-				//console.log("prop.load :  ", prop);
+				console.log("prop.load :  ", this, this.objectPath, this.rootSchemaPath);
 				var self = this;
+
 				return deep.getAll([this.objectPath, this.rootSchemaPath])
 				.done(function(success){
-					console.log("property loaded : ",success, self.path, "/")
+					console.log("property loaded : ", self.path, JSON.stringify(success))
 					self.value = deep.utils.retrieveValueByPath(success.shift(), self.path, "/");
 					self.rootSchema = success.shift() || {};
 					self.schema = deep.utils.retrieveSchemaByPath(self.rootSchema, self.path, "/");
+					console.log("property value : ", self.value);
+					console.log("property schema : ", self.schema);
 					return self;
 				});
 			};
