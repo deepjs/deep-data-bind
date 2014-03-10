@@ -5,7 +5,7 @@ if(typeof define !== 'function'){
 	var define = require('amdefine')(module);
 }
 
-define(["require","deepjs/deep"], function(require, deep)
+define(["require","deepjs/deep", "deepjs/lib/view"], function(require, deep)
 {
 	deep.errors.Bind = function(msg, report, fileName, lineNum) {
 		if (typeof msg === 'object')
@@ -353,7 +353,7 @@ define(["require","deepjs/deep"], function(require, deep)
 			var self = this;
 			return deep.getAll([this.objectPath, this.rootSchemaPath])
 			.done(function(success){
-				self.value = deep.utils.retrieveValueByPath(success.shift(), self.path, "/");
+				self.value = deep.utils.fromPath(success.shift(), self.path, "/");
 				self.rootSchema = success.shift() || {};
 				self.schema = deep.utils.retrieveSchemaByPath(self.rootSchema, self.path, "/");
 				return self;

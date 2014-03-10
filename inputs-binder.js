@@ -358,7 +358,7 @@ define( function(require){
 		{
 			//console.log("whats context before retrieve by path : " + JSON.stringify(this.context))
 
-			var value = deep.utils.retrieveValueByPath(this.datas, i);
+			var value = deep.utils.fromPath(this.datas, i);
 			var valueIndex = 0;
 			for(var j = 0; j < this.pathMap[i].entries.length; ++j)
 			{
